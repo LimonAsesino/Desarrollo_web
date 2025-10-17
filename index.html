@@ -1,0 +1,534 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>EduConnect — Plataforma de Tutorías</title>
+<style>
+ 
+  :root{
+    --bg: #f4f7fb;
+    --surface: #ffffff;
+    --muted: #6b7885;
+    --text: #0b2330;
+    --primary: #12395a; 
+    --accent: #1fa37a;  
+    --glass: rgba(255,255,255,0.6);
+    --radius: 12px;
+  }
+  [data-theme="dark"]{
+    --bg: #071122;
+    --surface: #071824;
+    --muted: #98b0c1;
+    --text: #e6f6ff;
+    --primary: #4aa6ff;
+    --accent: #2fd19b;
+    --glass: rgba(10,18,24,0.5);
+  }
+
+  *{box-sizing:border-box}
+  html,body{height:100%}
+  body{
+    margin:0;
+    font-family: Inter, "Segoe UI", Roboto, system-ui, -apple-system, "Helvetica Neue", Arial;
+    background: linear-gradient(180deg,var(--bg), #e9f9f3);
+    color:var(--text);
+    -webkit-font-smoothing:antialiased;
+    -moz-osx-font-smoothing:grayscale;
+    min-height:100vh;
+  }
+
+
+  .header{
+    position:fixed; inset:0 0 auto 0;
+    height:64px; display:flex; align-items:center; justify-content:space-between;
+    padding:10px 20px; gap:12px;
+    background: linear-gradient(90deg, rgba(255,255,255,0.03), rgba(255,255,255,0.02));
+    backdrop-filter: blur(6px);
+    border-bottom: 1px solid rgba(0,0,0,0.04);
+    z-index:1100; transition:transform .22s ease, box-shadow .22s;
+  }
+  .header.hidden{ transform:translateY(-110%); }
+
+  .brand{ display:flex; align-items:center; gap:12px; font-weight:800; color:var(--primary); font-size:18px; }
+  .brand .logo{
+    width:42px;height:42px;border-radius:10px;background:linear-gradient(135deg,var(--primary),var(--accent)); display:inline-flex;align-items:center;justify-content:center;color:white;font-weight:800;
+    box-shadow:0 6px 20px rgba(12,34,56,0.08);
+  }
+
+  nav.navlinks{ display:flex; gap:8px; align-items:center; }
+  nav.navlinks a{
+    color:var(--text); text-decoration:none; padding:8px 12px; border-radius:8px; font-weight:600; opacity:0.92;
+  }
+  nav.navlinks a.active{ background:linear-gradient(90deg, rgba(31,163,122,0.12), rgba(18,57,90,0.04)); }
+  .controls{ display:flex; gap:8px; align-items:center; }
+
+  .theme-toggle{ background:transparent; border:1px solid rgba(0,0,0,0.06); padding:8px 10px; border-radius:8px; cursor:pointer; color:var(--text); font-weight:700; }
+  .cta{ background:var(--accent); color:white; border:none; padding:9px 14px; border-radius:10px; cursor:pointer; font-weight:700; box-shadow:0 8px 24px rgba(31,163,122,0.12); }
+
+
+  @media(max-width:880px){
+    nav.navlinks{ display:none; }
+    .mobile-toggle{ display:inline-flex; }
+  }
+
+
+  .container{ max-width:1100px; margin:100px auto 80px; padding:0 18px; }
+
+  .hero{
+    display:flex; gap:22px; align-items:center; padding:34px; border-radius:var(--radius);
+    background: linear-gradient(180deg, rgba(18,57,90,0.06), rgba(18,57,90,0.02));
+    box-shadow: 0 18px 50px rgba(16,30,45,0.06);
+  }
+  .hero .left h1{ margin:0; font-size:32px; color:var(--primary); }
+  .hero .left p{ margin:10px 0; color:var(--muted); font-size:15px; }
+  .hero .actions{ margin-top:14px; display:flex; gap:10px; flex-wrap:wrap; }
+  .hero img{ width:360px; border-radius:14px; box-shadow:0 28px 80px rgba(12,30,50,0.08); object-fit:cover; }
+
+
+  .section{ margin-top:26px; }
+  .card{ background:var(--surface); padding:16px; border-radius:12px; box-shadow:0 10px 30px rgba(3,20,40,0.04); }
+  .cards{ display:grid; gap:14px; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); }
+
+
+  .grid{ display:grid; grid-template-columns:repeat(auto-fit,minmax(240px,1fr)); gap:18px; margin-top:12px; }
+  .tutor{ display:flex; gap:12px; align-items:flex-start; padding:12px; border-radius:12px; background:var(--surface); transition:transform .16s ease, box-shadow .16s; box-shadow:0 12px 36px rgba(12,30,50,0.04); }
+  .tutor:hover{ transform:translateY(-6px); box-shadow:0 18px 48px rgba(12,30,50,0.06); }
+  .tutor img{ width:96px; height:96px; object-fit:cover; border-radius:10px; flex:0 0 96px; }
+  .tutor h3{ margin:0; color:var(--primary); font-size:16px; }
+  .tutor .meta{ color:var(--muted); font-size:13px; margin-top:6px; }
+
+
+  .modal{ position:fixed; inset:0; display:flex; align-items:center; justify-content:center; background:rgba(2,6,23,0.5); z-index:2200; opacity:0; pointer-events:none; transition:opacity .16s; }
+  .modal.open{ opacity:1; pointer-events:auto; }
+  .modal-card{ width:94%; max-width:920px; background:var(--surface); padding:18px; border-radius:12px; box-shadow:0 30px 90px rgba(3,12,30,0.6); }
+
+  
+  .form-field{ width:100%; padding:10px; border-radius:8px; border:1px solid #e6eef6; margin-top:8px; background:transparent; color:var(--text); }
+  .small{ font-size:13px; color:var(--muted); }
+
+ 
+  .view{ display:none; opacity:0; transform:translateY(8px); transition:opacity .28s ease, transform .28s ease; }
+  .view.active{ display:block; opacity:1; transform:translateY(0); }
+
+  
+  footer.footer{ text-align:center; color:var(--muted); padding:22px; margin-top:28px; }
+
+ 
+  @media(max-width:900px){
+    .hero{ flex-direction:column; align-items:flex-start; }
+    .hero img{ width:100%; height:auto }
+    .container{ margin-top:86px; }
+    .tutor img{ width:84px; height:84px; flex:0 0 84px; }
+  }
+</style>
+</head>
+<body>
+
+ 
+  <header class="header" id="siteHeader">
+    <div class="brand">
+      <div class="logo">EC</div>
+      <div>
+        <div style="font-size:14px; opacity:0.9">EduConnect</div>
+        <div style="font-size:11px; color:var(--muted)">Plataforma de Tutorías</div>
+      </div>
+    </div>
+
+    <nav class="navlinks" id="nav">
+      <a href="#inicio" data-link>Inicio</a>
+      <a href="#mision" data-link>Misión</a>
+      <a href="#vision" data-link>Visión</a>
+      <a href="#tutores" data-link>Tutores</a>
+      <a href="#planes" data-link>Planes</a>
+      <a href="#postulate" data-link>Postúlate</a>
+      <a href="#contacto" data-link>Contacto</a>
+    </nav>
+
+    <div class="controls">
+      <button class="theme-toggle" id="themeToggle" title="Cambiar tema">🌙</button>
+      <button class="cta" onclick="location.hash='postulate'">Postúlate</button>
+    </div>
+  </header>
+
+ 
+  <main class="container" id="app">
+   
+    <section id="view-inicio" class="view active">
+      <div class="hero">
+        <div class="left" style="flex:1">
+          <h1>Formación de calidad, tutores verificados</h1>
+          <p>Conecta con tutores profesionales especializados por materia y nivel. Reserva sesiones en línea o presenciales con facilidad.</p>
+          <div class="actions">
+            <button class="cta" onclick="location.hash='tutores'">Explorar Tutores</button>
+            <button class="btn" onclick="location.hash='planes'">Ver Planes</button>
+          </div>
+        </div>
+        <div class="right">
+          <img id="heroImage" src="https://source.unsplash.com/900x600/?classroom,students,teacher" alt="Hero" />
+        </div>
+      </div>
+
+      <section class="section">
+        <h2>Por qué EduConnect</h2>
+        <div class="cards" style="margin-top:12px">
+          <div class="card">
+            <h4>Calidad verificada</h4>
+            <p class="small">Todos nuestros tutores pasan un proceso de verificación profesional.</p>
+          </div>
+          <div class="card">
+            <h4>Flexible</h4>
+            <p class="small">Sesiones online o presenciales, reserva por hora y pagos seguros.</p>
+          </div>
+          <div class="card">
+            <h4>Soporte</h4>
+            <p class="small">Asesoría y seguimiento del progreso.</p>
+          </div>
+        </div>
+      </section>
+    </section>
+
+    
+    <section id="view-mision" class="view">
+      <div class="section card">
+        <h2>Misión</h2>
+        <p>Nuestra misión es democratizar el acceso a educación complementaria de alta calidad. Conectamos estudiantes con tutores expertos para potenciar capacidades y lograr objetivos académicos y profesionales.</p>
+      </div>
+    </section>
+
+   
+    <section id="view-vision" class="view">
+      <div class="section card">
+        <h2>Visión</h2>
+        <p>Ser la plataforma de referencia en América Latina para tutorías personalizadas, con impacto medible en el rendimiento académico y el desarrollo de habilidades.</p>
+      </div>
+    </section>
+
+   
+    <section id="view-tutores" class="view">
+      <div class="section">
+        <h2>Tutores</h2>
+        <p class="small">Filtra por materia o busca por nombre. Haz click en "Ver perfil" para más detalles y reservar.</p>
+
+        <div style="display:flex; gap:12px; margin-top:12px; flex-wrap:wrap;">
+          <input id="searchBox" class="form-field" placeholder="Buscar (nombre o materia)..." style="max-width:360px;">
+          <select id="filterSubject" class="form-field" style="width:180px;">
+            <option value="">Todas las materias</option>
+            <option value="Matemáticas">Matemáticas</option>
+            <option value="Programación">Programación</option>
+            <option value="Inglés">Inglés</option>
+            <option value="Química">Química</option>
+            <option value="Estadística">Estadística</option>
+            <option value="Física">Física</option>
+          </select>
+        </div>
+
+        <div id="tutorsGrid" class="grid" aria-live="polite">
+         
+        </div>
+      </div>
+    </section>
+
+   
+    <section id="view-planes" class="view">
+      <div class="section">
+        <h2>Planes</h2>
+        <div class="card-grid" style="display:grid; grid-template-columns: repeat(auto-fit,minmax(260px,1fr)); gap:16px; margin-top:12px;">
+          <div class="card">
+            <h3>Básico</h3>
+            <p class="small">Acceso a 5 horas/mes · Ideal para refuerzos.</p>
+            <p style="font-weight:800; margin-top:8px;">$50.000 COP</p>
+            <div style="margin-top:10px"><button class="cta" onclick="alert('Plan Básico: demo')">Elegir</button></div>
+          </div>
+          <div class="card">
+            <h3>Estándar</h3>
+            <p class="small">15 horas/mes · Balance ideal.</p>
+            <p style="font-weight:800; margin-top:8px;">$120.000 COP</p>
+            <div style="margin-top:10px"><button class="cta" onclick="alert('Plan Estándar: demo')">Elegir</button></div>
+          </div>
+          <div class="card">
+            <h3>Premium</h3>
+            <p class="small">Sesiones prioritarias e ilimitadas (según uso).</p>
+            <p style="font-weight:800; margin-top:8px;">$250.000 COP</p>
+            <div style="margin-top:10px"><button class="cta" onclick="alert('Plan Premium: demo')">Elegir</button></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+   
+    <section id="view-postulate" class="view">
+      <div class="section">
+        <h2>Postúlate como tutor</h2>
+        <div class="card" style="margin-top:12px;">
+          <form id="postulateForm">
+            <input name="pname" class="form-field" placeholder="Nombre completo" required>
+            <input name="pemail" class="form-field" type="email" placeholder="Correo electrónico" required>
+            <input name="psubject" class="form-field" placeholder="Especialidad / materias" required>
+            <textarea name="pdesc" class="form-field" rows="4" placeholder="Breve descripción de tu experiencia"></textarea>
+            <label class="small">Foto profesional (opcional)</label>
+            <input id="pphoto" type="file" class="form-field" accept="image/*">
+            <img id="ppreview" alt="" style="max-width:140px;border-radius:8px;display:none;margin-top:8px;">
+            <div style="margin-top:12px">
+              <button class="cta" type="submit">Enviar solicitud</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </section>
+
+   
+    <section id="view-contacto" class="view">
+      <div class="section">
+        <h2>Contacto</h2>
+        <div class="card" style="margin-top:12px;">
+          <form id="contactForm">
+            <input id="cname" class="form-field" placeholder="Nombre completo" required>
+            <input id="cemail" class="form-field" type="email" placeholder="Correo electrónico" required>
+            <textarea id="cmsg" class="form-field" rows="4" placeholder="¿En qué podemos ayudarte?"></textarea>
+            <div style="margin-top:10px"><button class="cta" type="submit">Enviar</button></div>
+          </form>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <footer class="footer">© 2025 EduConnect — Plataforma de Tutorías</footer>
+
+ 
+  <div id="profileModal" class="modal" aria-hidden="true">
+    <div class="modal-card">
+      <div style="display:flex;justify-content:space-between;align-items:center;">
+        <div>
+          <h3 id="profileName" style="margin:0"></h3>
+          <div id="profileSubject" class="small" style="margin-top:4px"></div>
+        </div>
+        <div>
+          <button id="closeProfile" class="btn">Cerrar</button>
+        </div>
+      </div>
+      <div id="profileBody" style="margin-top:12px"></div>
+    </div>
+  </div>
+
+<script>
+
+const TUTORS = [
+  {id:1,name:"María Rodríguez",subject:"Matemáticas",bio:"Especialista en Matemáticas y Física con 6 años de experiencia en refuerzos y preparación de exámenes.",rating:4.9,price:60000,location:"Bogotá",image:"https://source.unsplash.com/400x400/?professional-woman,portrait,teacher",gender:"F",availability:["Lunes 6pm","Miércoles 7pm","Sábado 10am"]},
+  {id:2,name:"Andrés López",subject:"Programación",bio:"Ingeniero de software, tutor en JavaScript, React y Node.js. Enfoque práctico y proyectos reales.",rating:4.8,price:75000,location:"Medellín",image:"https://source.unsplash.com/400x400/?professional-man,portrait,developer",gender:"M",availability:["Martes 5pm","Jueves 6pm","Domingo 4pm"]},
+  {id:3,name:"Laura Martínez",subject:"Inglés",bio:"Docente certificada con experiencia en preparación para exámenes y conversación avanzada.",rating:4.7,price:65000,location:"Cali",image:"https://source.unsplash.com/400x400/?professional-woman,teacher,portrait",gender:"F",availability:["Lunes 4pm","Viernes 6pm","Sábado 2pm"]},
+  {id:4,name:"Carlos Fernández",subject:"Química",bio:"Profesor universitario con énfasis práctico. Preparación para pruebas de laboratorio y teóricas.",rating:4.6,price:58000,location:"Cali",image:"https://source.unsplash.com/400x400/?professional-man,scientist,portrait",gender:"M",availability:["Miércoles 5pm","Viernes 7pm"]},
+  {id:5,name:"Ana Gómez",subject:"Estadística",bio:"Analista de datos y docente en estadística aplicada y probabilidad.",rating:4.8,price:62000,location:"Barranquilla",image:"https://source.unsplash.com/400x400/?professional-woman,analyst,portrait",gender:"F",availability:["Martes 3pm","Jueves 8pm"]},
+  {id:6,name:"Diego Ramírez",subject:"Física",bio:"Tutor en Física avanzada, preparación para olimpiadas y proyectos de investigación.",rating:4.9,price:82000,location:"Bogotá",image:"https://source.unsplash.com/400x400/?professional-man,physics,portrait",gender:"M",availability:["Lunes 7pm","Sábado 9am"]},
+  {id:7,name:"Sofía Torres",subject:"Biología",bio:"Bióloga y docente con experiencia en laboratorio y enseñanza práctica.",rating:4.6,price:56000,location:"Bucaramanga",image:"https://source.unsplash.com/400x400/?professional-woman,biologist,portrait",gender:"F",availability:["Martes 10am","Jueves 5pm"]},
+  {id:8,name:"Mateo Ruiz",subject:"Diseño Web",bio:"Desarrollador front-end y tutor en HTML, CSS, diseño responsivo y UX básico.",rating:4.7,price:70000,location:"Medellín",image:"https://source.unsplash.com/400x400/?professional-man,web-developer,portrait",gender:"M",availability:["Miércoles 3pm","Sábado 11am"]},
+  {id:9,name:"Isabella Pérez",subject:"Francés",bio:"Profesora de idiomas con enfoque comunicativo y preparación para certificaciones.",rating:4.5,price:59000,location:"Bogotá",image:"https://source.unsplash.com/400x400/?professional-woman,teacher-language,portrait",gender:"F",availability:["Viernes 4pm","Domingo 10am"]},
+  {id:10,name:"Javier Morales",subject:"Economía",bio:"Economista con experiencia docente y en análisis macroeconómico.",rating:4.6,price:64000,location:"Cali",image:"https://source.unsplash.com/400x400/?professional-man,economist,portrait",gender:"M",availability:["Martes 6pm","Jueves 7pm"]}
+];
+
+
+const $ = id => document.getElementById(id);
+const formatCOP = n => n.toLocaleString('es-CO');
+
+
+(function initTheme(){
+  const btn = $('themeToggle');
+  const stored = localStorage.getItem('edu_theme') || (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+  document.documentElement.setAttribute('data-theme', stored);
+  btn.textContent = stored === 'dark' ? '☀️' : '🌙';
+  btn.addEventListener('click', ()=>{
+    const cur = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+    document.documentElement.setAttribute('data-theme', cur);
+    localStorage.setItem('edu_theme', cur);
+    btn.textContent = cur === 'dark' ? '☀️' : '🌙';
+  });
+})();
+
+
+(function routing(){
+  const views = document.querySelectorAll('.view');
+  const links = document.querySelectorAll('[data-link]');
+  function show(name){
+    const key = name || (location.hash && location.hash.replace('#','')) || 'inicio';
+    views.forEach(v=> v.classList.remove('active'));
+    const node = document.getElementById('view-' + key);
+    if(node) node.classList.add('active');
+    
+    links.forEach(a=> a.classList.toggle('active', a.getAttribute('href') === '#' + key));
+    if(key === 'tutores') renderTutors();
+    window.scrollTo({top:0, behavior:'smooth'});
+  }
+  window.addEventListener('hashchange', ()=> show(location.hash.replace('#','')));
+  
+  show(location.hash.replace('#',''));
+})();
+
+
+(function headerScroll(){
+  let last = 0;
+  const header = $('siteHeader');
+  window.addEventListener('scroll', ()=>{
+    const s = window.scrollY || window.pageYOffset;
+    if(s > last && s > 100) header.classList.add('hidden'); else header.classList.remove('hidden');
+    last = s;
+  });
+})();
+
+
+(function tutorsModule(){
+  const grid = $('tutorsGrid');
+  const search = $('searchBox');
+  const filter = $('filterSubject');
+
+  function renderTutors(){
+    grid.innerHTML = '';
+    const q = (search.value || '').toLowerCase();
+    const subj = (filter.value || '').toLowerCase();
+    const list = TUTORS.filter(t => {
+      return (!q || t.name.toLowerCase().includes(q) || t.subject.toLowerCase().includes(q))
+          && (!subj || t.subject.toLowerCase().includes(subj));
+    });
+    if(list.length === 0){
+      grid.innerHTML = '<div class="card">No se encontraron tutores.</div>';
+      return;
+    }
+    list.forEach(t => {
+      const div = document.createElement('div');
+      div.className = 'tutor';
+      const fallback = encodeURIComponent(t.gender === 'F' ? 'professional woman portrait' : 'professional man portrait');
+      const src = t.image ? t.image : `https://source.unsplash.com/400x400/?${fallback}`;
+      div.innerHTML = `
+        <img src="${src}" alt="${t.name}" onerror="this.onerror=null;this.src='https://source.unsplash.com/400x400/?${fallback}'" />
+        <div style="flex:1">
+          <h3>${t.name}</h3>
+          <div class="meta">${t.subject} · ${t.location}</div>
+          <p class="small" style="margin-top:8px">${t.bio}</p>
+          <div style="margin-top:10px">
+            <button class="btn" onclick="openProfile(${t.id})">Ver perfil</button>
+          </div>
+        </div>
+      `;
+      grid.appendChild(div);
+    });
+  }
+
+  search.addEventListener('input', renderTutors);
+  filter.addEventListener('change', renderTutors);
+
+  
+  window.renderTutors = renderTutors;
+
+  
+  window.openProfile = function(id){
+    const t = TUTORS.find(x => x.id === id);
+    if(!t) return;
+    $('profileName').textContent = t.name;
+    $('profileSubject').textContent = t.subject + ' · ' + t.location;
+    const fallback = encodeURIComponent(t.gender === 'F' ? 'professional woman portrait' : 'professional man portrait');
+    const img = t.image ? t.image : `https://source.unsplash.com/600x600/?${fallback}`;
+    $('profileBody').innerHTML = `
+      <div style="display:flex;gap:18px;flex-wrap:wrap">
+        <div style="flex:0 0 240px"><img src="${img}" alt="${t.name}" style="width:240px;height:240px;object-fit:cover;border-radius:10px" onerror="this.onerror=null;this.src='https://source.unsplash.com/600x600/?${fallback}'" /></div>
+        <div style="flex:1">
+          <h4 style="margin:0;color:var(--primary)">${t.subject}</h4>
+          <p style="margin-top:8px">${t.bio}</p>
+          <p class="small"><strong>Disponibilidad:</strong> ${t.availability.join(', ')}</p>
+          <p style="margin-top:10px;font-weight:800;color:var(--primary)">${formatCOP(t.price)} COP</p>
+          <div style="margin-top:12px">
+            <button class="cta" onclick="reserve(${t.id})">Reservar sesión</button>
+          </div>
+        </div>
+      </div>
+    `;
+    $('profileModal').classList.add('open');
+    $('profileModal').setAttribute('aria-hidden','false');
+  };
+
+  $('closeProfile').addEventListener('click', ()=>{
+    $('profileModal').classList.remove('open');
+    $('profileModal').setAttribute('aria-hidden','true');
+  });
+
+  
+  window.reserve = function(id){
+    const t = TUTORS.find(x => x.id === id); if(!t) return;
+    const student = prompt('Tu nombre completo para la reserva:');
+    if(!student) return alert('Cancelado');
+    const slot = prompt('Horario (ej: Lunes 6pm). Disponibilidad: ' + t.availability.join(', '));
+    if(!slot) return alert('Cancelado');
+    const arr = JSON.parse(localStorage.getItem('edu_reservas') || '[]');
+    arr.push({tutorId:id, tutorName:t.name, student, slot, when: new Date().toISOString()});
+    localStorage.setItem('edu_reservas', JSON.stringify(arr));
+    alert('Reserva guardada en demo. Revisa localStorage -> edu_reservas');
+    $('profileModal').classList.remove('open');
+  };
+
+  
+  if(location.hash.replace('#','') === 'tutores') renderTutors();
+
+})();
+
+
+(function postulateModule(){
+  const form = $('postulateForm');
+  const photo = $('pphoto');
+  const preview = $('ppreview');
+
+  if(photo){
+    photo.addEventListener('change', function(e){
+      const f = e.target.files[0];
+      if(!f) { preview.style.display='none'; return; }
+      const reader = new FileReader();
+      reader.onload = function(ev){ preview.src = ev.target.result; preview.style.display='block'; }
+      reader.readAsDataURL(f);
+    });
+  }
+
+  if(form){
+    form.addEventListener('submit', function(e){
+      e.preventDefault();
+      const obj = {
+        name: this.pname.value,
+        email: this.pemail.value,
+        subject: this.psubject.value,
+        desc: this.pdesc.value,
+        when: new Date().toISOString()
+      };
+      const arr = JSON.parse(localStorage.getItem('edu_postulates') || '[]');
+      arr.push(obj);
+      localStorage.setItem('edu_postulates', JSON.stringify(arr));
+      alert('Solicitud enviada (demo). Revisa localStorage -> edu_postulates');
+      this.reset();
+      preview.src=''; preview.style.display='none';
+      location.hash = '#inicio';
+    });
+  }
+})();
+
+
+(function contactModule(){
+  const form = $('contactForm');
+  if(form){
+    form.addEventListener('submit', function(e){
+      e.preventDefault();
+      alert('Gracias por escribirnos (demo). Pronto nos comunicaremos.');
+      this.reset();
+      location.hash='#inicio';
+    });
+  }
+})();
+
+
+(function initialHash(){
+  if(location.hash){
+    const name = location.hash.replace('#','');
+    setTimeout(()=> {
+      const el = document.getElementById('view-' + name);
+      if(el){ document.querySelectorAll('.view').forEach(v=>v.classList.remove('active')); el.classList.add('active'); if(name==='tutores') window.renderTutors(); }
+    }, 40);
+  }
+})();
+</script>
+</body>
+</html>
